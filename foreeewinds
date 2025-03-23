@@ -1,0 +1,78 @@
+use std::fs::{File, OpenOptions};
+use std::io::{self, Read, Write};
+use std::path::Path;
+use std::collections::HashMap;
+
+#[derive(Debug)]
+struct FileMetadata {
+    name: String,
+    size: u64,
+    created: String,
+    modified: String,
+    accessed: String,
+}
+
+struct DiskAnalyzer {
+    disk_image: File,
+}
+
+impl DiskAnalyzer {
+    fn new<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let disk_image = OpenOptions::new().read(true).open(path)?;
+        Ok(DiskAnalyzer { disk_image })
+    }
+
+    fn read_sector(&mut self, sector: u64, size: usize) -> io::Result<Vec<u8>> {
+        let mut buffer = vec![0; size];
+        self.disk_image.seek(std::io::SeekFrom::Start(sector * size as u64))?;
+        self.disk_image.read_exact(&mut buffer)?;
+        Ok(buffer)
+    }
+
+    fn parse_ntfs(&mut self) -> io::Result<HashMap<String, FileMetadata>> {
+        // Placeholder for NTFS parsing logic
+        let mut files = HashMap::new();
+        // Example of adding a file metadata entry
+        files.insert(
+            "example.txt".to_string(),
+            FileMetadata {
+                name: "example.txt".to_string(),
+                size: 1024,
+                created: "2023-01-01 12:00:00".to_string(),
+                modified: "2023-01-02 12:00:00".to_string(),
+                accessed: "2023-01-03 12:00:00".to_string(),
+            },
+        );
+        Ok(files)
+    }
+
+    fn recover_deleted_files(&self) -> io::Result<Vec<FileMetadata>> {
+        // Placeholder for deleted file recovery logic
+        Ok(vec![])
+    }
+
+    fn generate_report(&self, files: &HashMap<String, FileMetadata>) -> io::Result<()> {
+        let mut report_file = File::create("forwinds_report.txt")?;
+        for (name, metadata) in files {
+            writeln!(report_file, "File: {}", name)?;
+            writeln!(report_file, "Size: {} bytes", metadata.size)?;
+            writeln!(report_file, "Created: {}", metadata.created)?;
+            writeln!(report_file, "Modified: {}", metadata.modified)?;
+            writeln!(report_file, "Accessed: {}", metadata.accessed)?;
+            writeln!(report_file, "-----------------------------")?;
+        }
+        Ok(())
+    }
+}
+
+fn main() -> io::Result<()> {
+    let disk_image_path = "path/to/disk/image.img"; // Replace with actual path
+    let mut analyzer = DiskAnalyzer::new(disk_image_path)?;
+
+    let files = analyzer.parse_ntfs()?;
+    analyzer.generate_report(&files)?;
+
+    println!("Forensics analysis completed. Report generated.");
+    Ok(())
+}
+
